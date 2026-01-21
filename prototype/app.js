@@ -1,37 +1,18 @@
 /**
  * View Coordination Prototype - View Layer
- *
- * This is the presentation layer. It references the domain model (model.js)
- * but keeps view concerns separate.
- *
- * Key concepts:
- * - Scope: A reference to a domain node (game, inventory, etc.)
- * - State: What the user is doing (Browse, Edit, Preview)
- * - Presentation: How data is displayed (List, Grid, Properties)
- * - Context: (Scope + State) - views sharing a context share selection
  */
 
 // =============================================================================
 // State
 // =============================================================================
 
-const { createScope, scopeKey, scopeLabel, createSampleWorld } = Model;
-
-// The domain data
-const world = createSampleWorld();
-
-// View state
+let world = null;
 let panels = [];
 let panelIdCounter = 0;
 let topZIndex = 100;
-
-// Currently selected scope in sidebar (for creating new views)
 let selectedScope = null;
 
-// Selection per context: Map<contextKey, selectedItemId>
 const selectionByContext = new Map();
-
-// Color assignment per context
 const contextColors = new Map();
 const CONTEXT_COLORS = [
     '#5b8def', '#ef5b5b', '#5bef8f', '#efb85b',
@@ -44,7 +25,7 @@ let colorIndex = 0;
 // =============================================================================
 
 function getContextKey(scope, state) {
-    return `${scopeKey(scope)}|${state}`;
+    return `${Model.scopeKey(scope)}|${state}`;
 }
 
 function getContextColor(contextKey) {
@@ -80,7 +61,7 @@ function renderDomainTree() {
     const container = document.getElementById('domain-tree');
     container.innerHTML = '';
 
-    world.accounts.forEach(account => {
+    world.accounts.forEach((account, id) => {
         container.appendChild(createAccountNode(account));
     });
 }
@@ -89,17 +70,15 @@ function createAccountNode(account) {
     const node = document.createElement('div');
     node.className = 'tree-node';
 
-    // Account row
     const row = createTreeRow({
         icon: '👤',
         iconClass: 'account',
         label: account.name,
-        scope: createScope('account', account.id),
+        scope: Model.createScope('account', account.id),
         hasChildren: true,
     });
     node.appendChild(row.element);
 
-    // Children container
     const children = document.createElement('div');
     children.className = 'tree-children expanded';
 
@@ -125,7 +104,7 @@ function createAccountNode(account) {
     gamesNode.appendChild(gamesChildren);
     children.appendChild(gamesNode);
 
-    // Inventory folder
+    // Inventory
     const invNode = document.createElement('div');
     invNode.className = 'tree-node';
 
@@ -134,7 +113,7 @@ function createAccountNode(account) {
         icon: '📦',
         iconClass: 'inventory',
         label: `${account.name}'s Inventory`,
-        scope: createScope('inventory', inv.id),
+        scope: Model.createScope('inventory', inv.id),
         indent: 1,
         hasChildren: inv.assets.length > 0,
         badge: inv.assets.length,
@@ -161,7 +140,7 @@ function createGameNode(game, indent) {
         icon: '🎮',
         iconClass: 'game',
         label: game.name,
-        scope: createScope('game', game.id),
+        scope: Model.createScope('game', game.id),
         indent,
         hasChildren: game.assets.length > 0,
         badge: game.assets.length,
@@ -170,12 +149,113 @@ function createGameNode(game, indent) {
 
     const children = document.createElement('div');
     children.className = 'tree-children';
+
+    // Show places first, then other assets
     game.assets.forEach(asset => {
-        children.appendChild(createAssetNode(asset, indent + 1));
+        if (asset.type === 'place') {
+            children.appendChild(createPlaceNode(asset, indent + 1));
+        } else {
+            children.appendChild(createAssetNode(asset, indent + 1));
+        }
     });
     node.appendChild(children);
 
     return node;
+}
+
+function createPlaceNode(place, indent) {
+    const node = document.createElement('div');
+    node.className = 'tree-node';
+
+    const instanceCount = countInstances(place.getInstances());
+
+    const row = createTreeRow({
+        icon: '🗺️',
+        iconClass: 'place',
+        label: place.name,
+        scope: Model.createScope('place', place.id),
+        indent,
+        hasChildren: instanceCount > 0 || place.references.length > 0,
+        badge: instanceCount,
+    });
+    node.appendChild(row.element);
+
+    const children = document.createElement('div');
+    children.className = 'tree-children';
+
+    // Show instances
+    place.getInstances().forEach(inst => {
+        children.appendChild(createInstanceNode(inst, indent + 1));
+    });
+
+    // Show references if any
+    if (place.references.length > 0) {
+        const refsFolder = document.createElement('div');
+        refsFolder.className = 'tree-node';
+
+        const refsRow = createTreeRow({
+            icon: '🔗',
+            iconClass: 'folder',
+            label: 'References',
+            indent: indent + 1,
+            hasChildren: true,
+            isFolder: true,
+        });
+        refsFolder.appendChild(refsRow.element);
+
+        const refsChildren = document.createElement('div');
+        refsChildren.className = 'tree-children';
+        place.references.forEach(ref => {
+            refsChildren.appendChild(createAssetNode(ref, indent + 2));
+        });
+        refsFolder.appendChild(refsChildren);
+        children.appendChild(refsFolder);
+    }
+
+    node.appendChild(children);
+    return node;
+}
+
+function createInstanceNode(instance, indent) {
+    const node = document.createElement('div');
+    node.className = 'tree-node';
+
+    const icons = {
+        model: '📦', part: '🧱', light: '💡', spawn: '🚩', folder: '📁', camera: '📷', script: '📜',
+    };
+
+    const hasChildren = instance.children && instance.children.length > 0;
+
+    const row = createTreeRow({
+        icon: icons[instance.type] || '📄',
+        iconClass: instance.type,
+        label: instance.name,
+        scope: Model.createScope('instance', instance.id),
+        indent,
+        hasChildren,
+        badge: hasChildren ? instance.children.length : undefined,
+    });
+    node.appendChild(row.element);
+
+    if (hasChildren) {
+        const children = document.createElement('div');
+        children.className = 'tree-children';
+        instance.children.forEach(child => {
+            children.appendChild(createInstanceNode(child, indent + 1));
+        });
+        node.appendChild(children);
+    }
+
+    return node;
+}
+
+function countInstances(instances) {
+    let count = 0;
+    instances.forEach(inst => {
+        count++;
+        if (inst.children) count += countInstances(inst.children);
+    });
+    return count;
 }
 
 function createAssetNode(asset, indent) {
@@ -183,19 +263,15 @@ function createAssetNode(asset, indent) {
     node.className = 'tree-node';
 
     const icons = {
-        place: '🗺️',
-        script: '📜',
-        package: '📦',
-        mesh: '🔷',
-        image: '🖼️',
-        audio: '🔊',
+        place: '🗺️', script: '📜', package: '📦',
+        mesh: '🔷', image: '🖼️', audio: '🔊',
     };
 
     const row = createTreeRow({
         icon: icons[asset.type] || '📄',
         iconClass: asset.type,
         label: asset.name,
-        scope: createScope('asset', asset.id),
+        scope: Model.createScope('asset', asset.id),
         indent,
         hasChildren: false,
     });
@@ -210,18 +286,16 @@ function createTreeRow(config) {
     const row = document.createElement('div');
     row.className = 'tree-row';
 
-    // Indentation
     for (let i = 0; i < indent; i++) {
         const indentEl = document.createElement('span');
         indentEl.className = 'tree-indent';
         row.appendChild(indentEl);
     }
 
-    // Toggle
     const toggle = document.createElement('span');
     toggle.className = 'tree-toggle';
     if (hasChildren) {
-        toggle.textContent = '▶';
+        toggle.textContent = '▼';
         toggle.addEventListener('click', (e) => {
             e.stopPropagation();
             const children = row.parentElement.querySelector('.tree-children');
@@ -233,19 +307,16 @@ function createTreeRow(config) {
     }
     row.appendChild(toggle);
 
-    // Icon
     const iconEl = document.createElement('span');
     iconEl.className = `tree-icon ${iconClass}`;
     iconEl.textContent = icon;
     row.appendChild(iconEl);
 
-    // Label
     const labelEl = document.createElement('span');
     labelEl.className = 'tree-label';
     labelEl.textContent = label;
     row.appendChild(labelEl);
 
-    // Badge
     if (badge !== undefined) {
         const badgeEl = document.createElement('span');
         badgeEl.className = 'tree-badge';
@@ -253,7 +324,6 @@ function createTreeRow(config) {
         row.appendChild(badgeEl);
     }
 
-    // Click handler (if scope is defined)
     if (scope && !isFolder) {
         row.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -265,20 +335,15 @@ function createTreeRow(config) {
 }
 
 function selectScopeInTree(scope, rowElement) {
-    // Clear previous selection
     document.querySelectorAll('.tree-row.selected').forEach(el => el.classList.remove('selected'));
-
-    // Select new
     rowElement.classList.add('selected');
     selectedScope = scope;
 
-    // Show add view section
     const addSection = document.getElementById('add-view-section');
     addSection.style.display = 'block';
 
-    // Update scope badge
     const badge = document.getElementById('selected-scope-badge');
-    badge.textContent = scopeLabel(scope, world);
+    badge.textContent = Model.scopeLabel(scope, world);
 }
 
 // =============================================================================
@@ -292,12 +357,7 @@ function createPanel(config) {
     const color = getContextColor(contextKey);
 
     const panel = {
-        id,
-        scope,
-        state,
-        presentation,
-        contextKey,
-        color,
+        id, scope, state, presentation, contextKey, color,
         x: x ?? 50 + (panels.length * 30),
         y: y ?? 50 + (panels.length * 30),
         width: width ?? 250,
@@ -309,35 +369,26 @@ function createPanel(config) {
     panels.push(panel);
     renderPanel(panel);
     updateContextList();
-    updateTreeBadges();
     return panel;
 }
 
 function removePanel(panelId) {
     const index = panels.findIndex(p => p.id === panelId);
     if (index === -1) return;
-
-    const panel = panels[index];
-    panel.element.remove();
+    panels[index].element.remove();
     panels.splice(index, 1);
-
     updateContextList();
-    updateTreeBadges();
 }
 
 function updatePanelState(panelId, newState) {
     const panel = panels.find(p => p.id === panelId);
     if (!panel) return;
-
     panel.state = newState;
     panel.contextKey = getContextKey(panel.scope, newState);
     panel.color = getContextColor(panel.contextKey);
-
-    // Re-render
     const oldElement = panel.element;
     renderPanel(panel);
     oldElement.remove();
-
     updateContextList();
 }
 
@@ -355,11 +406,10 @@ function renderPanel(panel) {
     el.style.zIndex = topZIndex++;
     el.style.borderColor = panel.color;
 
-    // Header
     const header = document.createElement('div');
     header.className = 'panel-header';
 
-    const scopeName = scopeLabel(panel.scope, world);
+    const scopeName = Model.scopeLabel(panel.scope, world);
 
     header.innerHTML = `
         <div class="panel-controls">
@@ -375,26 +425,24 @@ function renderPanel(panel) {
         <span class="panel-menu-btn" title="Change state">⚙</span>
     `;
 
-    // Close button
     header.querySelector('.close').addEventListener('click', (e) => {
         e.stopPropagation();
         removePanel(panel.id);
     });
 
-    // Menu button
-    const menuBtn = header.querySelector('.panel-menu-btn');
-    menuBtn.addEventListener('click', (e) => {
+    header.querySelector('.panel-menu-btn').addEventListener('click', (e) => {
         e.stopPropagation();
         togglePanelMenu(panel, header);
     });
 
     el.appendChild(header);
 
-    // Content
     const content = document.createElement('div');
     content.className = 'panel-content';
 
-    if (panel.presentation === 'List') {
+    if (panel.presentation === 'Viewport') {
+        createViewportContent(content, panel);
+    } else if (panel.presentation === 'List') {
         createListContent(content, panel);
     } else if (panel.presentation === 'Grid') {
         createGridContent(content, panel);
@@ -403,11 +451,8 @@ function renderPanel(panel) {
     }
 
     el.appendChild(content);
-
-    // Dragging
     setupDragging(el, header, panel);
 
-    // Focus on click
     el.addEventListener('mousedown', () => {
         el.style.zIndex = ++topZIndex;
     });
@@ -418,10 +463,7 @@ function renderPanel(panel) {
 
 function togglePanelMenu(panel, header) {
     const existing = header.querySelector('.panel-menu');
-    if (existing) {
-        existing.remove();
-        return;
-    }
+    if (existing) { existing.remove(); return; }
 
     document.querySelectorAll('.panel-menu').forEach(m => m.remove());
 
@@ -437,9 +479,8 @@ function togglePanelMenu(panel, header) {
         </div>
     `;
 
-    const stateSelect = menu.querySelector('.menu-state');
-    stateSelect.addEventListener('change', () => {
-        updatePanelState(panel.id, stateSelect.value);
+    menu.querySelector('.menu-state').addEventListener('change', (e) => {
+        updatePanelState(panel.id, e.target.value);
     });
 
     menu.addEventListener('mousedown', e => e.stopPropagation());
@@ -460,28 +501,23 @@ function setupDragging(el, header, panel) {
     let startX, startY, initialX, initialY;
 
     header.addEventListener('mousedown', (e) => {
-        if (e.target.closest('.panel-btn') || e.target.closest('.panel-menu-btn') || e.target.closest('.panel-menu')) {
-            return;
-        }
+        if (e.target.closest('.panel-btn') || e.target.closest('.panel-menu-btn') || e.target.closest('.panel-menu')) return;
         isDragging = true;
         startX = e.clientX;
         startY = e.clientY;
         initialX = el.offsetLeft;
         initialY = el.offsetTop;
         el.classList.add('dragging');
-
         document.addEventListener('mousemove', onMouseMove);
         document.addEventListener('mouseup', onMouseUp);
     });
 
     function onMouseMove(e) {
         if (!isDragging) return;
-        const dx = e.clientX - startX;
-        const dy = e.clientY - startY;
-        el.style.left = `${initialX + dx}px`;
-        el.style.top = `${initialY + dy}px`;
-        panel.x = initialX + dx;
-        panel.y = initialY + dy;
+        el.style.left = `${initialX + e.clientX - startX}px`;
+        el.style.top = `${initialY + e.clientY - startY}px`;
+        panel.x = initialX + e.clientX - startX;
+        panel.y = initialY + e.clientY - startY;
     }
 
     function onMouseUp() {
@@ -498,10 +534,95 @@ function setupDragging(el, header, panel) {
 
 function getIconForType(type) {
     const icons = {
-        game: '🎮', place: '🗺️', script: '📜', package: '📦',
-        mesh: '🔷', image: '🖼️', audio: '🔊',
+        // Asset types
+        game: '🎮', place: '🗺️', script: '📜', package: '📦', mesh: '🔷', image: '🖼️', audio: '🔊',
+        // Instance types
+        model: '📦', part: '🧱', light: '💡', spawn: '🚩', folder: '📁', camera: '📷',
     };
     return icons[type] || '📄';
+}
+
+function createViewportContent(contentEl, panel) {
+    // Only available for place scopes
+    if (panel.scope.type !== 'place') {
+        contentEl.innerHTML = '<div class="no-selection">Viewport only available for Places</div>';
+        return;
+    }
+
+    const place = world.getPlace(panel.scope.id);
+    if (!place) {
+        contentEl.innerHTML = '<div class="no-selection">Place not found</div>';
+        return;
+    }
+
+    // Gather all instances recursively
+    const allInstances = [];
+    function collectInstances(instances) {
+        instances.forEach(inst => {
+            allInstances.push(inst);
+            if (inst.children) collectInstances(inst.children);
+        });
+    }
+    collectInstances(place.getInstances());
+
+    const canvas = document.createElement('div');
+    canvas.className = 'viewport-canvas viewport-3d';
+
+    // Add grid floor
+    const grid = document.createElement('div');
+    grid.className = 'viewport-grid';
+    canvas.appendChild(grid);
+
+    if (allInstances.length === 0) {
+        canvas.innerHTML += '<div class="viewport-empty">No instances</div>';
+        contentEl.appendChild(canvas);
+        return;
+    }
+
+    // Faux 3D: isometric-ish projection
+    // x -> screen x, z -> screen y (depth), y -> vertical offset
+    const scale = 3;
+    const offsetX = 150;
+    const offsetY = 180;
+
+    allInstances.forEach(inst => {
+        const el = document.createElement('div');
+        el.className = 'viewport-object';
+        el.dataset.itemId = inst.id;
+
+        // Isometric projection
+        const screenX = offsetX + (inst.position.x - inst.position.z * 0.5) * scale;
+        const screenY = offsetY + (inst.position.z * 0.5 - inst.position.y) * scale;
+        const depth = inst.position.z + inst.position.y;
+
+        el.style.left = `${screenX}px`;
+        el.style.top = `${screenY}px`;
+        el.style.zIndex = Math.floor(100 - depth);
+
+        // Size based on type
+        if (inst.type === 'folder') {
+            el.style.display = 'none'; // Don't show folders in viewport
+            return;
+        }
+
+        el.innerHTML = `<span class="obj-icon">${getIconForType(inst.type)}</span><span class="obj-label">${inst.name}</span>`;
+
+        el.addEventListener('click', (e) => {
+            e.stopPropagation();
+            setSelection(panel.contextKey, inst.id);
+        });
+        canvas.appendChild(el);
+    });
+
+    canvas.addEventListener('click', () => setSelection(panel.contextKey, null));
+    contentEl.appendChild(canvas);
+
+    panel.onSelectionChange = () => {
+        const selected = getSelection(panel.contextKey);
+        canvas.querySelectorAll('.viewport-object').forEach(el => {
+            el.classList.toggle('selected', el.dataset.itemId === selected);
+        });
+    };
 }
 
 function createListContent(contentEl, panel) {
@@ -519,17 +640,12 @@ function createListContent(contentEl, panel) {
         const el = document.createElement('div');
         el.className = 'list-item';
         el.dataset.itemId = item.id;
-        el.innerHTML = `
-            <span class="list-item-icon ${item.type || ''}">${getIconForType(item.type)}</span>
-            <span>${item.name}</span>
-        `;
-
+        el.innerHTML = `<span class="list-item-icon ${item.type || ''}">${getIconForType(item.type)}</span><span>${item.name}</span>`;
         el.addEventListener('click', () => setSelection(panel.contextKey, item.id));
         list.appendChild(el);
     });
 
     contentEl.appendChild(list);
-
     panel.onSelectionChange = () => {
         const selected = getSelection(panel.contextKey);
         list.querySelectorAll('.list-item').forEach(el => {
@@ -553,17 +669,12 @@ function createGridContent(contentEl, panel) {
         const el = document.createElement('div');
         el.className = 'grid-item';
         el.dataset.itemId = item.id;
-        el.innerHTML = `
-            <div class="grid-item-icon">${getIconForType(item.type)}</div>
-            <div class="grid-item-label">${item.name}</div>
-        `;
-
+        el.innerHTML = `<div class="grid-item-icon">${getIconForType(item.type)}</div><div class="grid-item-label">${item.name}</div>`;
         el.addEventListener('click', () => setSelection(panel.contextKey, item.id));
         grid.appendChild(el);
     });
 
     contentEl.appendChild(grid);
-
     panel.onSelectionChange = () => {
         const selected = getSelection(panel.contextKey);
         grid.querySelectorAll('.grid-item').forEach(el => {
@@ -582,42 +693,23 @@ function createPropertiesContent(contentEl, panel) {
             props.innerHTML = '<div class="no-selection">No selection</div>';
             return;
         }
-
-        // Try to find the item
         const items = world.getChildrenForScope(panel.scope);
         const item = items.find(i => i.id === selectedId);
-
         if (!item) {
             props.innerHTML = '<div class="no-selection">Item not found</div>';
             return;
         }
-
         props.innerHTML = `
             <div class="prop-section">
                 <div class="prop-section-title">Identity</div>
-                <div class="prop-row">
-                    <span class="prop-label">Name</span>
-                    <span class="prop-value">${item.name}</span>
-                </div>
-                <div class="prop-row">
-                    <span class="prop-label">Type</span>
-                    <span class="prop-value">${item.type || 'N/A'}</span>
-                </div>
-                <div class="prop-row">
-                    <span class="prop-label">ID</span>
-                    <span class="prop-value">${item.id}</span>
-                </div>
+                <div class="prop-row"><span class="prop-label">Name</span><span class="prop-value">${item.name}</span></div>
+                <div class="prop-row"><span class="prop-label">Type</span><span class="prop-value">${item.type || 'N/A'}</span></div>
+                <div class="prop-row"><span class="prop-label">ID</span><span class="prop-value">${item.id}</span></div>
             </div>
             <div class="prop-section">
                 <div class="prop-section-title">Context</div>
-                <div class="prop-row">
-                    <span class="prop-label">Scope</span>
-                    <span class="prop-value">${scopeLabel(panel.scope, world)}</span>
-                </div>
-                <div class="prop-row">
-                    <span class="prop-label">State</span>
-                    <span class="prop-value">${panel.state}</span>
-                </div>
+                <div class="prop-row"><span class="prop-label">Scope</span><span class="prop-value">${Model.scopeLabel(panel.scope, world)}</span></div>
+                <div class="prop-row"><span class="prop-label">State</span><span class="prop-value">${panel.state}</span></div>
             </div>
         `;
     }
@@ -633,8 +725,8 @@ function createPropertiesContent(contentEl, panel) {
 
 function updateContextList() {
     const listEl = document.getElementById('context-list');
-
     const contexts = new Map();
+
     panels.forEach(p => {
         if (!contexts.has(p.contextKey)) {
             contexts.set(p.contextKey, { color: p.color, scope: p.scope, state: p.state, panels: [] });
@@ -643,41 +735,24 @@ function updateContextList() {
     });
 
     listEl.innerHTML = '';
-
     if (contexts.size === 0) {
         listEl.innerHTML = '<div class="empty-state">No views yet</div>';
         return;
     }
 
-    contexts.forEach((ctx, key) => {
+    contexts.forEach((ctx) => {
         const item = document.createElement('div');
         item.className = 'context-item';
-
-        const label = `${scopeLabel(ctx.scope, world)} · ${ctx.state}`;
+        const label = `${Model.scopeLabel(ctx.scope, world)} · ${ctx.state}`;
         item.innerHTML = `
             <span class="context-color" style="background: ${ctx.color}"></span>
             <span class="context-label">${label}</span>
             <span class="context-count">${ctx.panels.length}</span>
         `;
-
-        item.addEventListener('mouseenter', () => {
-            ctx.panels.forEach(p => {
-                p.element.style.boxShadow = `0 0 0 3px ${ctx.color}`;
-            });
-        });
-        item.addEventListener('mouseleave', () => {
-            ctx.panels.forEach(p => {
-                p.element.style.boxShadow = '';
-            });
-        });
-
+        item.addEventListener('mouseenter', () => ctx.panels.forEach(p => p.element.style.boxShadow = `0 0 0 3px ${ctx.color}`));
+        item.addEventListener('mouseleave', () => ctx.panels.forEach(p => p.element.style.boxShadow = ''));
         listEl.appendChild(item);
     });
-}
-
-function updateTreeBadges() {
-    // Could update tree to show which scopes have views
-    // For now, just a placeholder
 }
 
 // =============================================================================
@@ -685,26 +760,35 @@ function updateTreeBadges() {
 // =============================================================================
 
 function init() {
+    // Initialize world from model
+    world = Model.createSampleWorld();
+
     // Render domain tree
     renderDomainTree();
 
     // Add view button
     document.getElementById('add-view-btn').addEventListener('click', () => {
         if (!selectedScope) return;
-
         const state = document.getElementById('new-state').value;
         const presentation = document.getElementById('new-presentation').value;
-
         createPanel({ scope: selectedScope, state, presentation });
     });
 
     // Create initial demo panels
-    const obbyScope = createScope('game', 'obby');
-    const invScope = createScope('inventory', 'inv-jimjam');
+    const lobbyScope = Model.createScope('place', 'obby-lobby');  // Place level for viewport
+    const obbyScope = Model.createScope('game', 'obby');          // Game level for asset list
+    const invScope = Model.createScope('inventory', 'inv-jimjam');
 
-    createPanel({ scope: obbyScope, state: 'Edit', presentation: 'List', x: 40, y: 40, width: 240, height: 260 });
-    createPanel({ scope: obbyScope, state: 'Edit', presentation: 'Properties', x: 300, y: 40, width: 240, height: 260 });
-    createPanel({ scope: invScope, state: 'Browse', presentation: 'Grid', x: 40, y: 330, width: 300, height: 220 });
+    // Place-level view with viewport (instances)
+    createPanel({ scope: lobbyScope, state: 'Edit', presentation: 'Viewport', x: 40, y: 40, width: 340, height: 300 });
+    createPanel({ scope: lobbyScope, state: 'Edit', presentation: 'List', x: 400, y: 40, width: 200, height: 300 });
+    createPanel({ scope: lobbyScope, state: 'Edit', presentation: 'Properties', x: 620, y: 40, width: 220, height: 300 });
+
+    // Game-level view (places and scripts)
+    createPanel({ scope: obbyScope, state: 'Browse', presentation: 'List', x: 40, y: 370, width: 260, height: 200 });
+
+    // Inventory view
+    createPanel({ scope: invScope, state: 'Browse', presentation: 'Grid', x: 320, y: 370, width: 300, height: 200 });
 }
 
 document.addEventListener('DOMContentLoaded', init);

@@ -1,5 +1,3 @@
-# Multitasking Framework
-
 Developers are working with a lot of necessary complexity when crafting a game. Wrangling that complexity is difficult in any engine, but studio makes some simplifying assumptions that make it harder, not easier, to create.
 
 ---
