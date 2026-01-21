@@ -6,334 +6,443 @@
 }
 
 body {
-    font-family: 'Courier New', monospace;
-    background: #1a1a2e;
+    font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
     overflow: hidden;
     height: 100vh;
     width: 100vw;
-}
-
-/* Desktop Canvas */
-#desktop {
-    position: relative;
-    width: 100%;
-    height: 100%;
-    background:
-        linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
-    background-size: 20px 20px;
-}
-
-/* Window Styles */
-.window {
-    position: absolute;
-    min-width: 200px;
-    min-height: 150px;
-    background: #0f0f1a;
-    border: 2px solid #444;
-    border-radius: 4px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
-    display: flex;
-    flex-direction: column;
-}
-
-.window.active {
-    border-color: #666;
-    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.7);
-}
-
-/* Context-based border colors */
-.window[data-context="Game-Edit"] {
-    border-color: #4a9eff;
-}
-
-.window[data-context="Game-Edit"].active {
-    border-color: #6bb3ff;
-    box-shadow: 0 8px 30px rgba(74, 158, 255, 0.3);
-}
-
-.window[data-context="Asset-Edit"] {
-    border-color: #ff6b6b;
-}
-
-.window[data-context="Asset-Edit"].active {
-    border-color: #ff8a8a;
-    box-shadow: 0 8px 30px rgba(255, 107, 107, 0.3);
-}
-
-/* Title Bar */
-.window-titlebar {
-    padding: 8px 12px;
-    background: #1a1a2e;
-    border-bottom: 1px solid #333;
-    cursor: grab;
-    user-select: none;
-    border-radius: 2px 2px 0 0;
-}
-
-.window-titlebar:active {
-    cursor: grabbing;
-}
-
-.window-title {
-    font-size: 12px;
-    color: #888;
-    letter-spacing: 0.5px;
-}
-
-.window[data-context="Game-Edit"] .window-title {
-    color: #4a9eff;
-}
-
-.window[data-context="Asset-Edit"] .window-title {
-    color: #ff6b6b;
-}
-
-/* Window Content */
-.window-content {
-    flex: 1;
-    padding: 12px;
-    overflow: auto;
+    background: #1a1a1a;
     color: #ccc;
 }
 
-/* Item List */
-.item-list {
-    list-style: none;
+/* =============================================================================
+   Layout
+   ============================================================================= */
+
+#app {
+    display: flex;
+    height: 100vh;
 }
 
-.item-list li {
-    padding: 8px 12px;
-    margin: 4px 0;
-    border: 1px dashed #333;
-    border-radius: 3px;
-    cursor: pointer;
-    transition: all 0.15s ease;
-    font-size: 13px;
-}
-
-.item-list li:hover {
-    background: rgba(255, 255, 255, 0.05);
-    border-color: #555;
-}
-
-.item-list li.selected {
-    background: rgba(74, 158, 255, 0.15);
-    border-color: #4a9eff;
-    border-style: solid;
-    color: #fff;
-}
-
-.window[data-context="Asset-Edit"] .item-list li.selected {
-    background: rgba(255, 107, 107, 0.15);
-    border-color: #ff6b6b;
-}
-
-/* Tree View */
-.tree-view {
-    font-size: 13px;
-}
-
-.tree-item {
-    padding: 6px 8px;
-    margin: 2px 0;
-    cursor: pointer;
-    border: 1px solid transparent;
-    border-radius: 3px;
-    transition: all 0.15s ease;
-}
-
-.tree-item:hover {
-    background: rgba(255, 255, 255, 0.05);
-}
-
-.tree-item.selected {
-    background: rgba(74, 158, 255, 0.15);
-    border-color: #4a9eff;
-    color: #fff;
-}
-
-.tree-item .indent {
-    display: inline-block;
-    width: 16px;
-}
-
-.tree-item .icon {
-    margin-right: 6px;
-    opacity: 0.6;
-}
-
-/* 3D Viewport Placeholder */
-.viewport-3d {
-    height: 100%;
+/* Sidebar */
+#sidebar {
+    width: 240px;
+    background: #222;
+    border-right: 1px solid #333;
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    flex-shrink: 0;
 }
 
-.viewport-canvas {
+.sidebar-header {
+    padding: 16px;
+    border-bottom: 1px solid #333;
+}
+
+.sidebar-header h1 {
+    font-size: 14px;
+    font-weight: 500;
+    color: #888;
+    margin-bottom: 4px;
+}
+
+.sidebar-header p {
+    font-size: 11px;
+    color: #555;
+}
+
+.sidebar-section {
+    padding: 16px;
+    border-bottom: 1px solid #333;
+}
+
+.sidebar-section h2 {
+    font-size: 11px;
+    font-weight: 600;
+    color: #666;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 12px;
+}
+
+/* Form controls */
+.form-group {
+    margin-bottom: 12px;
+}
+
+.form-group label {
+    display: block;
+    font-size: 11px;
+    color: #888;
+    margin-bottom: 4px;
+}
+
+.form-group select,
+.form-group input {
+    width: 100%;
+    padding: 6px 8px;
+    background: #333;
+    border: 1px solid #444;
+    border-radius: 4px;
+    color: #ccc;
+    font-size: 12px;
+}
+
+.form-group select:focus,
+.form-group input:focus {
+    outline: none;
+    border-color: #666;
+}
+
+.btn {
+    padding: 8px 12px;
+    background: #444;
+    border: none;
+    border-radius: 4px;
+    color: #ccc;
+    font-size: 12px;
+    cursor: pointer;
+    width: 100%;
+}
+
+.btn:hover {
+    background: #555;
+}
+
+.btn-primary {
+    background: #4a6da7;
+}
+
+.btn-primary:hover {
+    background: #5a7db7;
+}
+
+/* Context list */
+.context-list {
     flex: 1;
-    border: 1px dashed #333;
+    overflow-y: auto;
+    padding: 12px;
+}
+
+.context-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px;
+    margin-bottom: 4px;
+    border-radius: 4px;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.context-item:hover {
+    background: #2a2a2a;
+}
+
+.context-item.active {
+    background: #333;
+}
+
+.context-color {
+    width: 12px;
+    height: 12px;
     border-radius: 3px;
+    flex-shrink: 0;
+}
+
+.context-label {
+    flex: 1;
+    color: #aaa;
+}
+
+.context-count {
+    font-size: 10px;
+    color: #666;
+    background: #333;
+    padding: 2px 6px;
+    border-radius: 10px;
+}
+
+/* =============================================================================
+   Canvas
+   ============================================================================= */
+
+#canvas {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+    background: #1a1a1a;
+}
+
+/* =============================================================================
+   Panel
+   ============================================================================= */
+
+.panel {
+    position: absolute;
+    background: #2a2a2a;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border: 2px solid #3a3a3a;
+    min-width: 200px;
+    min-height: 150px;
+}
+
+.panel.dragging {
+    opacity: 0.8;
+    cursor: grabbing;
+}
+
+.panel-header {
+    padding: 8px 10px;
+    background: #333;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: grab;
+    border-bottom: 1px solid #222;
+}
+
+.panel-header:active {
+    cursor: grabbing;
+}
+
+.panel-controls {
+    display: flex;
+    gap: 5px;
+}
+
+.panel-btn {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #555;
+    cursor: pointer;
+}
+
+.panel-btn.close:hover {
+    background: #e05050;
+}
+
+.panel-color {
+    width: 8px;
+    height: 8px;
+    border-radius: 2px;
+    flex-shrink: 0;
+}
+
+.panel-tuple {
+    flex: 1;
+    font-size: 11px;
+    color: #888;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.panel-menu-btn {
+    width: 16px;
+    height: 16px;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #555;
-    font-size: 12px;
+    color: #666;
+    cursor: pointer;
+    border-radius: 3px;
+}
+
+.panel-menu-btn:hover {
+    background: #444;
+    color: #aaa;
+}
+
+.panel-content {
+    flex: 1;
+    overflow: auto;
+    position: relative;
+}
+
+/* Panel dropdown menu */
+.panel-menu {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    background: #333;
+    border: 1px solid #444;
+    border-radius: 6px;
+    padding: 8px;
+    min-width: 180px;
+    z-index: 1000;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+
+.panel-menu-group {
+    margin-bottom: 8px;
+}
+
+.panel-menu-group:last-child {
+    margin-bottom: 0;
+}
+
+.panel-menu-label {
+    font-size: 10px;
+    color: #666;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+}
+
+.panel-menu select {
+    width: 100%;
+    padding: 4px 6px;
+    background: #444;
+    border: 1px solid #555;
+    border-radius: 3px;
+    color: #ccc;
+    font-size: 11px;
+}
+
+/* =============================================================================
+   Viewport Content
+   ============================================================================= */
+
+.viewport-canvas {
+    width: 100%;
+    height: 100%;
+    background: #2d3a5c;
     position: relative;
 }
 
 .viewport-object {
     position: absolute;
-    width: 60px;
-    height: 60px;
-    border: 2px dashed #444;
+    width: 28px;
+    height: 28px;
+    background: #555;
+    border-radius: 4px;
+    cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 10px;
-    color: #666;
-    cursor: pointer;
-    transition: all 0.15s ease;
-    background: rgba(255, 255, 255, 0.02);
-}
-
-.viewport-object:hover {
-    border-color: #666;
-    background: rgba(255, 255, 255, 0.05);
-}
-
-.viewport-object.selected {
-    border-color: #4a9eff;
-    border-style: solid;
-    background: rgba(74, 158, 255, 0.1);
-    color: #4a9eff;
-}
-
-/* Properties Panel */
-.properties-panel {
-    font-size: 12px;
-}
-
-.property-group {
-    margin-bottom: 12px;
-}
-
-.property-group-title {
-    color: #666;
-    font-size: 11px;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    margin-bottom: 8px;
-    padding-bottom: 4px;
-    border-bottom: 1px dashed #333;
-}
-
-.property-row {
-    display: flex;
-    justify-content: space-between;
-    padding: 4px 0;
-    border-bottom: 1px dotted #222;
-}
-
-.property-label {
+    font-size: 9px;
     color: #888;
 }
 
-.property-value {
+.viewport-object:hover {
+    background: #666;
+}
+
+.viewport-object.selected {
+    background: #888;
+    box-shadow: 0 0 0 2px #aaa;
+    color: #fff;
+}
+
+/* =============================================================================
+   List Content
+   ============================================================================= */
+
+.list-content {
+    padding: 8px;
+}
+
+.list-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    color: #888;
+}
+
+.list-item:hover {
+    background: #333;
+}
+
+.list-item.selected {
+    background: #444;
+    color: #ccc;
+}
+
+.list-item-icon {
+    width: 10px;
+    height: 10px;
+    background: #555;
+    border-radius: 2px;
+}
+
+.list-item.selected .list-item-icon {
+    background: #777;
+}
+
+/* =============================================================================
+   Properties Content
+   ============================================================================= */
+
+.properties-content {
+    padding: 12px;
+}
+
+.prop-row {
+    display: flex;
+    align-items: center;
+    padding: 6px 0;
+    font-size: 11px;
+    border-bottom: 1px solid #333;
+}
+
+.prop-label {
+    width: 80px;
+    color: #666;
+}
+
+.prop-value {
+    flex: 1;
     color: #aaa;
-    font-family: 'Courier New', monospace;
+    font-family: monospace;
 }
 
 .no-selection {
     color: #555;
-    font-style: italic;
+    font-size: 11px;
     text-align: center;
     padding: 20px;
 }
 
-/* Text Editor */
-.text-editor {
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-}
+/* =============================================================================
+   Instructions overlay
+   ============================================================================= */
 
-.editor-toolbar {
-    padding: 8px;
-    border-bottom: 1px dashed #333;
-    display: flex;
-    gap: 8px;
-}
-
-.editor-btn {
-    padding: 4px 8px;
-    background: transparent;
-    border: 1px dashed #444;
-    color: #888;
-    font-family: inherit;
-    font-size: 11px;
-    cursor: pointer;
-    border-radius: 2px;
-}
-
-.editor-btn:hover {
-    border-color: #666;
-    color: #aaa;
-}
-
-.editor-content {
-    flex: 1;
-    padding: 12px;
-    font-size: 12px;
-    line-height: 1.6;
-    color: #999;
-}
-
-/* Legend */
-#legend {
-    position: fixed;
+#instructions {
+    position: absolute;
     bottom: 20px;
-    left: 20px;
-    background: rgba(15, 15, 26, 0.95);
-    border: 1px solid #333;
-    border-radius: 4px;
+    right: 20px;
+    background: #2a2a2a;
+    border: 1px solid #3a3a3a;
+    border-radius: 8px;
     padding: 16px;
-    font-size: 12px;
-    color: #888;
-    max-width: 320px;
-    z-index: 10000;
-}
-
-#legend h3 {
-    color: #ccc;
-    font-size: 14px;
-    margin-bottom: 12px;
-    font-weight: normal;
-}
-
-#legend p {
-    margin: 8px 0;
+    font-size: 11px;
+    color: #666;
+    max-width: 280px;
     line-height: 1.5;
 }
 
-.legend-item {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin: 6px 0;
+#instructions h3 {
+    color: #888;
+    font-size: 12px;
+    margin-bottom: 8px;
 }
 
-.legend-color {
-    width: 16px;
-    height: 16px;
-    border-radius: 2px;
+#instructions ul {
+    margin: 0;
+    padding-left: 16px;
 }
 
-.legend-hint {
-    color: #666;
-    font-style: italic;
-    margin-top: 12px !important;
-    padding-top: 8px;
-    border-top: 1px dashed #333;
+#instructions li {
+    margin: 4px 0;
+}
+
+#instructions strong {
+    color: #aaa;
 }

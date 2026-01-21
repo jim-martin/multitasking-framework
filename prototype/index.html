@@ -3,39 +3,71 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Multitasking Framework - View Coordination Prototype</title>
+    <title>View Coordination Prototype</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <div id="desktop">
-        <!-- Windows will be dynamically created here -->
-    </div>
-
-    <!-- Window Template -->
-    <template id="window-template">
-        <div class="window">
-            <div class="window-titlebar">
-                <span class="window-title"></span>
+    <div id="app">
+        <!-- Sidebar -->
+        <div id="sidebar">
+            <div class="sidebar-header">
+                <h1>View Coordination</h1>
+                <p>(Scope, State, Presentation)</p>
             </div>
-            <div class="window-content">
-                <!-- Content will be injected here -->
+
+            <!-- Add Panel -->
+            <div class="sidebar-section">
+                <h2>Add Panel</h2>
+                <div class="form-group">
+                    <label>Scope</label>
+                    <select id="new-scope">
+                        <option value="Game">Game</option>
+                        <option value="Asset">Asset</option>
+                        <option value="Script">Script</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>State</label>
+                    <select id="new-state">
+                        <option value="Edit">Edit</option>
+                        <option value="Browse">Browse</option>
+                        <option value="Preview">Preview</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Presentation</label>
+                    <select id="new-presentation">
+                        <option value="Viewport">Viewport</option>
+                        <option value="List">List</option>
+                        <option value="Properties">Properties</option>
+                    </select>
+                </div>
+                <button id="add-panel-btn" class="btn btn-primary">Add Panel</button>
+            </div>
+
+            <!-- Active Contexts -->
+            <div class="sidebar-section" style="flex: 1; display: flex; flex-direction: column;">
+                <h2>Active Contexts</h2>
+                <div id="context-list" class="context-list">
+                    <!-- Populated dynamically -->
+                </div>
             </div>
         </div>
-    </template>
 
-    <!-- Legend -->
-    <div id="legend">
-        <h3>View Coordination Demo</h3>
-        <p><strong>Faceted Views:</strong> Windows with same (Scope, State) share selection</p>
-        <div class="legend-item">
-            <span class="legend-color" style="background: #4a9eff;"></span>
-            <span>(Game, Edit, *) - Linked selection</span>
+        <!-- Canvas -->
+        <div id="canvas">
+            <!-- Panels rendered here -->
+
+            <div id="instructions">
+                <h3>How it works</h3>
+                <ul>
+                    <li>Panels with <strong>same (Scope, State)</strong> share selection</li>
+                    <li><strong>Click close button</strong> to remove panel</li>
+                    <li><strong>Click gear icon</strong> to change Scope/State</li>
+                    <li><strong>Colored border</strong> = linked context</li>
+                </ul>
+            </div>
         </div>
-        <div class="legend-item">
-            <span class="legend-color" style="background: #ff6b6b;"></span>
-            <span>(Asset, Edit, *) - Independent selection</span>
-        </div>
-        <p class="legend-hint">Click items to select. Drag title bars to move windows.</p>
     </div>
 
     <script src="app.js"></script>

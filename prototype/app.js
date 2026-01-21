@@ -1,32 +1,68 @@
 /**
- * Multitasking Framework - View Coordination Prototype
+ * View Coordination Prototype
  *
- * Demonstrates the tuple-based view coordination system:
- * - Views identified by (Scope, State, Presentation)
- * - Views with same (Scope, State) share selection (Faceted Views)
- * - Different Contexts maintain independent selection
+ * Interactive demo for (Scope, State, Presentation) tuples.
+ * Panels with the same (Scope, State) share selection.
  */
 
 // =============================================================================
-// State Management
+// Configuration
 // =============================================================================
 
-// Selection state per Context (Scope + State combination)
-// Key: "Scope-State", Value: Set of selected item IDs
-const selectionByContext = new Map();
+const SCOPES = ['Game', 'Asset', 'Script'];
+const STATES = ['Edit', 'Browse', 'Preview'];
+const PRESENTATIONS = ['Viewport', 'List', 'Properties'];
 
-// All window instances
-const windows = [];
+// Colors for different contexts
+const CONTEXT_COLORS = [
+    '#5b8def', // blue
+    '#ef5b5b', // red
+    '#5bef8f', // green
+    '#efb85b', // orange
+    '#b85bef', // purple
+    '#5befc4', // teal
+    '#ef5bb8', // pink
+    '#c4ef5b', // lime
+];
 
-// Z-index counter for stacking
+// =============================================================================
+// State
+// =============================================================================
+
+let panels = [];
+let panelIdCounter = 0;
 let topZIndex = 100;
 
+// Selection per context: Map<contextKey, Set<itemId>>
+const selectionByContext = new Map();
+
+// Color assignment per context
+const contextColors = new Map();
+let colorIndex = 0;
+
+// Demo objects (shared data)
+const objects = [
+    { id: 'obj1', name: 'Player' },
+    { id: 'obj2', name: 'Enemy' },
+    { id: 'obj3', name: 'Terrain' },
+    { id: 'obj4', name: 'Light' },
+    { id: 'obj5', name: 'Camera' },
+];
+
 // =============================================================================
-// Selection System
+// Context & Selection
 // =============================================================================
 
 function getContextKey(scope, state) {
     return `${scope}-${state}`;
+}
+
+function getContextColor(contextKey) {
+    if (!contextColors.has(contextKey)) {
+        contextColors.set(contextKey, CONTEXT_COLORS[colorIndex % CONTEXT_COLORS.length]);
+        colorIndex++;
+    }
+    return contextColors.get(contextKey);
 }
 
 function getSelection(contextKey) {
@@ -45,17 +81,6 @@ function setSelection(contextKey, itemId) {
     broadcastSelectionChange(contextKey);
 }
 
-function toggleSelection(contextKey, itemId) {
-    const selection = getSelection(contextKey);
-    if (selection.has(itemId)) {
-        selection.delete(itemId);
-    } else {
-        selection.clear(); // Single selection mode
-        selection.add(itemId);
-    }
-    broadcastSelectionChange(contextKey);
-}
-
 function isSelected(contextKey, itemId) {
     return getSelection(contextKey).has(itemId);
 }
@@ -66,77 +91,210 @@ function getSelectedItem(contextKey) {
 }
 
 function broadcastSelectionChange(contextKey) {
-    windows.forEach(win => {
-        if (win.contextKey === contextKey && win.onSelectionChange) {
-            win.onSelectionChange();
+    panels.forEach(panel => {
+        if (panel.contextKey === contextKey && panel.onSelectionChange) {
+            panel.onSelectionChange();
         }
     });
 }
 
 // =============================================================================
-// Window Management
+// Panel Management
 // =============================================================================
 
-function createWindow(config) {
-    const { scope, state, presentation, x, y, width, height, contentFactory } = config;
+function createPanel(config) {
+    const { scope, state, presentation, x, y, width, height } = config;
+    const id = ++panelIdCounter;
     const contextKey = getContextKey(scope, state);
+    const color = getContextColor(contextKey);
 
-    const template = document.getElementById('window-template');
-    const windowEl = template.content.cloneNode(true).querySelector('.window');
-
-    // Set tuple as title
-    const tupleString = `(${scope}, ${state}, ${presentation})`;
-    windowEl.querySelector('.window-title').textContent = tupleString;
-
-    // Set context for styling
-    windowEl.dataset.context = contextKey;
-
-    // Position and size
-    windowEl.style.left = `${x}px`;
-    windowEl.style.top = `${y}px`;
-    windowEl.style.width = `${width}px`;
-    windowEl.style.height = `${height}px`;
-    windowEl.style.zIndex = topZIndex++;
-
-    // Create window object
-    const windowObj = {
-        element: windowEl,
+    const panel = {
+        id,
         scope,
         state,
         presentation,
         contextKey,
-        onSelectionChange: null
+        color,
+        x: x || 50 + (panels.length * 30),
+        y: y || 50 + (panels.length * 30),
+        width: width || (presentation === 'Viewport' ? 400 : 250),
+        height: height || (presentation === 'Viewport' ? 300 : 250),
+        element: null,
+        onSelectionChange: null,
     };
 
-    // Generate content
-    const contentEl = windowEl.querySelector('.window-content');
-    contentFactory(contentEl, windowObj);
-
-    // Add to DOM and tracking
-    document.getElementById('desktop').appendChild(windowEl);
-    windows.push(windowObj);
-
-    // Setup interactions
-    setupDragging(windowEl);
-    setupFocusing(windowEl);
-
-    return windowObj;
+    panels.push(panel);
+    renderPanel(panel);
+    updateContextList();
+    return panel;
 }
 
-function setupDragging(windowEl) {
-    const titlebar = windowEl.querySelector('.window-titlebar');
-    let isDragging = false;
-    let startX, startY, initialLeft, initialTop;
+function removePanel(panelId) {
+    const index = panels.findIndex(p => p.id === panelId);
+    if (index === -1) return;
 
-    titlebar.addEventListener('mousedown', (e) => {
+    const panel = panels[index];
+    panel.element.remove();
+    panels.splice(index, 1);
+
+    updateContextList();
+}
+
+function updatePanelContext(panelId, newScope, newState) {
+    const panel = panels.find(p => p.id === panelId);
+    if (!panel) return;
+
+    panel.scope = newScope;
+    panel.state = newState;
+    panel.contextKey = getContextKey(newScope, newState);
+    panel.color = getContextColor(panel.contextKey);
+
+    // Re-render panel
+    const oldElement = panel.element;
+    renderPanel(panel);
+    oldElement.remove();
+
+    updateContextList();
+}
+
+// =============================================================================
+// Panel Rendering
+// =============================================================================
+
+function renderPanel(panel) {
+    const el = document.createElement('div');
+    el.className = 'panel';
+    el.style.left = `${panel.x}px`;
+    el.style.top = `${panel.y}px`;
+    el.style.width = `${panel.width}px`;
+    el.style.height = `${panel.height}px`;
+    el.style.zIndex = topZIndex++;
+    el.style.borderColor = panel.color;
+
+    // Header
+    const header = document.createElement('div');
+    header.className = 'panel-header';
+    header.innerHTML = `
+        <div class="panel-controls">
+            <span class="panel-btn close" title="Close"></span>
+            <span class="panel-btn"></span>
+            <span class="panel-btn"></span>
+        </div>
+        <span class="panel-color" style="background: ${panel.color}"></span>
+        <span class="panel-tuple">(${panel.scope}, ${panel.state}, ${panel.presentation})</span>
+        <span class="panel-menu-btn" title="Change context">⚙</span>
+    `;
+
+    // Close button
+    header.querySelector('.close').addEventListener('click', (e) => {
+        e.stopPropagation();
+        removePanel(panel.id);
+    });
+
+    // Menu button
+    const menuBtn = header.querySelector('.panel-menu-btn');
+    menuBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        togglePanelMenu(panel, header);
+    });
+
+    el.appendChild(header);
+
+    // Content
+    const content = document.createElement('div');
+    content.className = 'panel-content';
+
+    if (panel.presentation === 'Viewport') {
+        createViewportContent(content, panel);
+    } else if (panel.presentation === 'List') {
+        createListContent(content, panel);
+    } else if (panel.presentation === 'Properties') {
+        createPropertiesContent(content, panel);
+    }
+
+    el.appendChild(content);
+
+    // Dragging
+    setupDragging(el, header, panel);
+
+    // Focus on click
+    el.addEventListener('mousedown', () => {
+        el.style.zIndex = ++topZIndex;
+    });
+
+    document.getElementById('canvas').appendChild(el);
+    panel.element = el;
+}
+
+function togglePanelMenu(panel, header) {
+    // Remove existing menu
+    const existing = header.querySelector('.panel-menu');
+    if (existing) {
+        existing.remove();
+        return;
+    }
+
+    // Close other menus
+    document.querySelectorAll('.panel-menu').forEach(m => m.remove());
+
+    const menu = document.createElement('div');
+    menu.className = 'panel-menu';
+    menu.innerHTML = `
+        <div class="panel-menu-group">
+            <div class="panel-menu-label">Scope</div>
+            <select class="menu-scope">
+                ${SCOPES.map(s => `<option value="${s}" ${s === panel.scope ? 'selected' : ''}>${s}</option>`).join('')}
+            </select>
+        </div>
+        <div class="panel-menu-group">
+            <div class="panel-menu-label">State</div>
+            <select class="menu-state">
+                ${STATES.map(s => `<option value="${s}" ${s === panel.state ? 'selected' : ''}>${s}</option>`).join('')}
+            </select>
+        </div>
+    `;
+
+    // Handle changes
+    const scopeSelect = menu.querySelector('.menu-scope');
+    const stateSelect = menu.querySelector('.menu-state');
+
+    const applyChange = () => {
+        updatePanelContext(panel.id, scopeSelect.value, stateSelect.value);
+    };
+
+    scopeSelect.addEventListener('change', applyChange);
+    stateSelect.addEventListener('change', applyChange);
+
+    // Prevent drag when interacting with menu
+    menu.addEventListener('mousedown', e => e.stopPropagation());
+
+    header.appendChild(menu);
+
+    // Close on outside click
+    setTimeout(() => {
+        document.addEventListener('click', function closeMenu(e) {
+            if (!menu.contains(e.target) && e.target !== header.querySelector('.panel-menu-btn')) {
+                menu.remove();
+                document.removeEventListener('click', closeMenu);
+            }
+        });
+    }, 0);
+}
+
+function setupDragging(el, header, panel) {
+    let isDragging = false;
+    let startX, startY, initialX, initialY;
+
+    header.addEventListener('mousedown', (e) => {
+        if (e.target.closest('.panel-btn') || e.target.closest('.panel-menu-btn') || e.target.closest('.panel-menu')) {
+            return;
+        }
         isDragging = true;
         startX = e.clientX;
         startY = e.clientY;
-        initialLeft = windowEl.offsetLeft;
-        initialTop = windowEl.offsetTop;
-
-        // Bring to front
-        windowEl.style.zIndex = ++topZIndex;
+        initialX = el.offsetLeft;
+        initialY = el.offsetTop;
+        el.classList.add('dragging');
 
         document.addEventListener('mousemove', onMouseMove);
         document.addEventListener('mouseup', onMouseUp);
@@ -144,309 +302,196 @@ function setupDragging(windowEl) {
 
     function onMouseMove(e) {
         if (!isDragging) return;
-
         const dx = e.clientX - startX;
         const dy = e.clientY - startY;
-
-        windowEl.style.left = `${initialLeft + dx}px`;
-        windowEl.style.top = `${initialTop + dy}px`;
+        el.style.left = `${initialX + dx}px`;
+        el.style.top = `${initialY + dy}px`;
+        panel.x = initialX + dx;
+        panel.y = initialY + dy;
     }
 
     function onMouseUp() {
         isDragging = false;
+        el.classList.remove('dragging');
         document.removeEventListener('mousemove', onMouseMove);
         document.removeEventListener('mouseup', onMouseUp);
     }
 }
 
-function setupFocusing(windowEl) {
-    windowEl.addEventListener('mousedown', () => {
-        // Remove active from all windows
-        document.querySelectorAll('.window').forEach(w => w.classList.remove('active'));
-        // Add active to this window
-        windowEl.classList.add('active');
-        // Bring to front
-        windowEl.style.zIndex = ++topZIndex;
-    });
-}
-
 // =============================================================================
-// Content Factories
+// Content Renderers
 // =============================================================================
 
-// Demo data - shared across views
-const demoObjects = [
-    { id: 'obj1', name: 'Player', type: 'Model' },
-    { id: 'obj2', name: 'Terrain', type: 'Part' },
-    { id: 'obj3', name: 'SpawnPoint', type: 'SpawnLocation' },
-    { id: 'obj4', name: 'Lighting', type: 'Lighting' },
-    { id: 'obj5', name: 'Camera', type: 'Camera' }
-];
-
-const assetObjects = [
-    { id: 'asset1', name: 'PlayerScript.lua', type: 'Script' },
-    { id: 'asset2', name: 'GameConfig.json', type: 'JSON' },
-    { id: 'asset3', name: 'README.md', type: 'Markdown' }
-];
-
-function createTreeContent(contentEl, windowObj) {
-    const tree = document.createElement('div');
-    tree.className = 'tree-view';
-
-    // Root node
-    const root = document.createElement('div');
-    root.className = 'tree-item';
-    root.innerHTML = '<span class="icon">▼</span> Workspace';
-    tree.appendChild(root);
-
-    // Child nodes
-    demoObjects.forEach(obj => {
-        const item = document.createElement('div');
-        item.className = 'tree-item';
-        item.dataset.itemId = obj.id;
-        item.innerHTML = `<span class="indent"></span><span class="icon">□</span> ${obj.name}`;
-
-        item.addEventListener('click', () => {
-            toggleSelection(windowObj.contextKey, obj.id);
-        });
-
-        tree.appendChild(item);
-    });
-
-    contentEl.appendChild(tree);
-
-    // Selection change handler
-    windowObj.onSelectionChange = () => {
-        tree.querySelectorAll('.tree-item[data-item-id]').forEach(item => {
-            const itemId = item.dataset.itemId;
-            item.classList.toggle('selected', isSelected(windowObj.contextKey, itemId));
-        });
-    };
-}
-
-function createViewportContent(contentEl, windowObj) {
-    const viewport = document.createElement('div');
-    viewport.className = 'viewport-3d';
-
+function createViewportContent(contentEl, panel) {
     const canvas = document.createElement('div');
     canvas.className = 'viewport-canvas';
 
-    // Place objects in viewport
     const positions = [
-        { x: 30, y: 30 },
+        { x: 40, y: 40 },
         { x: 120, y: 80 },
-        { x: 200, y: 40 },
-        { x: 80, y: 140 },
-        { x: 180, y: 160 }
+        { x: 200, y: 50 },
+        { x: 80, y: 150 },
+        { x: 180, y: 130 },
     ];
 
-    demoObjects.forEach((obj, i) => {
+    objects.forEach((obj, i) => {
         const objEl = document.createElement('div');
         objEl.className = 'viewport-object';
         objEl.dataset.itemId = obj.id;
-        objEl.textContent = obj.name.substring(0, 6);
+        objEl.textContent = (i + 1);
         objEl.style.left = `${positions[i].x}px`;
         objEl.style.top = `${positions[i].y}px`;
 
         objEl.addEventListener('click', (e) => {
             e.stopPropagation();
-            toggleSelection(windowObj.contextKey, obj.id);
+            setSelection(panel.contextKey, obj.id);
         });
 
         canvas.appendChild(objEl);
     });
 
-    viewport.appendChild(canvas);
-    contentEl.appendChild(viewport);
+    canvas.addEventListener('click', () => {
+        setSelection(panel.contextKey, null);
+    });
 
-    // Selection change handler
-    windowObj.onSelectionChange = () => {
+    contentEl.appendChild(canvas);
+
+    panel.onSelectionChange = () => {
         canvas.querySelectorAll('.viewport-object').forEach(objEl => {
-            const itemId = objEl.dataset.itemId;
-            objEl.classList.toggle('selected', isSelected(windowObj.contextKey, itemId));
+            objEl.classList.toggle('selected', isSelected(panel.contextKey, objEl.dataset.itemId));
         });
     };
 }
 
-function createPropertiesContent(contentEl, windowObj) {
-    const panel = document.createElement('div');
-    panel.className = 'properties-panel';
+function createListContent(contentEl, panel) {
+    const list = document.createElement('div');
+    list.className = 'list-content';
+
+    objects.forEach(obj => {
+        const item = document.createElement('div');
+        item.className = 'list-item';
+        item.dataset.itemId = obj.id;
+        item.innerHTML = `
+            <div class="list-item-icon"></div>
+            <span>${obj.name}</span>
+        `;
+
+        item.addEventListener('click', () => {
+            setSelection(panel.contextKey, obj.id);
+        });
+
+        list.appendChild(item);
+    });
+
+    contentEl.appendChild(list);
+
+    panel.onSelectionChange = () => {
+        list.querySelectorAll('.list-item').forEach(item => {
+            item.classList.toggle('selected', isSelected(panel.contextKey, item.dataset.itemId));
+        });
+    };
+}
+
+function createPropertiesContent(contentEl, panel) {
+    const props = document.createElement('div');
+    props.className = 'properties-content';
 
     function render() {
-        const selectedId = getSelectedItem(windowObj.contextKey);
+        const selectedId = getSelectedItem(panel.contextKey);
+        const obj = objects.find(o => o.id === selectedId);
 
-        if (!selectedId) {
-            panel.innerHTML = '<div class="no-selection">No object selected</div>';
-            return;
-        }
-
-        const obj = demoObjects.find(o => o.id === selectedId);
         if (!obj) {
-            panel.innerHTML = '<div class="no-selection">No object selected</div>';
+            props.innerHTML = '<div class="no-selection">No selection</div>';
             return;
         }
 
-        panel.innerHTML = `
-            <div class="property-group">
-                <div class="property-group-title">Identity</div>
-                <div class="property-row">
-                    <span class="property-label">Name</span>
-                    <span class="property-value">${obj.name}</span>
-                </div>
-                <div class="property-row">
-                    <span class="property-label">Type</span>
-                    <span class="property-value">${obj.type}</span>
-                </div>
-                <div class="property-row">
-                    <span class="property-label">ID</span>
-                    <span class="property-value">${obj.id}</span>
-                </div>
+        props.innerHTML = `
+            <div class="prop-row">
+                <span class="prop-label">Name</span>
+                <span class="prop-value">${obj.name}</span>
             </div>
-            <div class="property-group">
-                <div class="property-group-title">Transform</div>
-                <div class="property-row">
-                    <span class="property-label">Position</span>
-                    <span class="property-value">(0, 0, 0)</span>
-                </div>
-                <div class="property-row">
-                    <span class="property-label">Rotation</span>
-                    <span class="property-value">(0, 0, 0)</span>
-                </div>
-                <div class="property-row">
-                    <span class="property-label">Scale</span>
-                    <span class="property-value">(1, 1, 1)</span>
-                </div>
+            <div class="prop-row">
+                <span class="prop-label">ID</span>
+                <span class="prop-value">${obj.id}</span>
+            </div>
+            <div class="prop-row">
+                <span class="prop-label">Context</span>
+                <span class="prop-value">${panel.contextKey}</span>
             </div>
         `;
     }
 
-    contentEl.appendChild(panel);
-
-    // Selection change handler
-    windowObj.onSelectionChange = render;
-
-    // Initial render
+    contentEl.appendChild(props);
+    panel.onSelectionChange = render;
     render();
 }
 
-function createTextEditorContent(contentEl, windowObj) {
-    const editor = document.createElement('div');
-    editor.className = 'text-editor';
+// =============================================================================
+// Context List (Sidebar)
+// =============================================================================
 
-    // File list (acts as selection target)
-    const fileList = document.createElement('ul');
-    fileList.className = 'item-list';
+function updateContextList() {
+    const listEl = document.getElementById('context-list');
 
-    assetObjects.forEach(asset => {
-        const item = document.createElement('li');
-        item.dataset.itemId = asset.id;
-        item.textContent = asset.name;
-
-        item.addEventListener('click', () => {
-            toggleSelection(windowObj.contextKey, asset.id);
-        });
-
-        fileList.appendChild(item);
-    });
-
-    editor.appendChild(fileList);
-
-    // Editor preview area
-    const preview = document.createElement('div');
-    preview.className = 'editor-content';
-    preview.innerHTML = '<em>Select a file to preview...</em>';
-
-    function updatePreview() {
-        const selectedId = getSelectedItem(windowObj.contextKey);
-        const asset = assetObjects.find(a => a.id === selectedId);
-
-        if (asset) {
-            if (asset.type === 'Script') {
-                preview.innerHTML = `<pre>-- ${asset.name}\nlocal player = game.Players.LocalPlayer\nprint("Hello, " .. player.Name)</pre>`;
-            } else if (asset.type === 'JSON') {
-                preview.innerHTML = `<pre>{\n  "gameName": "Demo Game",\n  "version": "1.0.0"\n}</pre>`;
-            } else {
-                preview.innerHTML = `<pre># ${asset.name}\n\nThis is a markdown file.</pre>`;
-            }
-        } else {
-            preview.innerHTML = '<em>Select a file to preview...</em>';
+    // Group panels by context
+    const contexts = new Map();
+    panels.forEach(p => {
+        if (!contexts.has(p.contextKey)) {
+            contexts.set(p.contextKey, { color: p.color, panels: [] });
         }
+        contexts.get(p.contextKey).panels.push(p);
+    });
+
+    listEl.innerHTML = '';
+
+    if (contexts.size === 0) {
+        listEl.innerHTML = '<div style="color: #555; font-size: 11px; padding: 8px;">No panels yet</div>';
+        return;
     }
 
-    editor.appendChild(preview);
-    contentEl.appendChild(editor);
+    contexts.forEach((ctx, key) => {
+        const item = document.createElement('div');
+        item.className = 'context-item';
+        item.innerHTML = `
+            <span class="context-color" style="background: ${ctx.color}"></span>
+            <span class="context-label">${key}</span>
+            <span class="context-count">${ctx.panels.length}</span>
+        `;
 
-    // Selection change handler
-    windowObj.onSelectionChange = () => {
-        fileList.querySelectorAll('li').forEach(item => {
-            const itemId = item.dataset.itemId;
-            item.classList.toggle('selected', isSelected(windowObj.contextKey, itemId));
+        // Highlight panels on hover
+        item.addEventListener('mouseenter', () => {
+            ctx.panels.forEach(p => {
+                p.element.style.boxShadow = `0 0 0 3px ${ctx.color}`;
+            });
         });
-        updatePreview();
-    };
+        item.addEventListener('mouseleave', () => {
+            ctx.panels.forEach(p => {
+                p.element.style.boxShadow = '';
+            });
+        });
+
+        listEl.appendChild(item);
+    });
 }
 
 // =============================================================================
-// Demo Setup
+// Initialization
 // =============================================================================
 
-function initDemo() {
-    // Faceted Views: (Game, Edit, *) - all share selection
-    // These demonstrate linked selection across different presentations
-
-    createWindow({
-        scope: 'Game',
-        state: 'Edit',
-        presentation: 'Tree',
-        x: 40,
-        y: 40,
-        width: 250,
-        height: 320,
-        contentFactory: createTreeContent
+function init() {
+    // Add panel button
+    document.getElementById('add-panel-btn').addEventListener('click', () => {
+        const scope = document.getElementById('new-scope').value;
+        const state = document.getElementById('new-state').value;
+        const presentation = document.getElementById('new-presentation').value;
+        createPanel({ scope, state, presentation });
     });
 
-    createWindow({
-        scope: 'Game',
-        state: 'Edit',
-        presentation: '3D',
-        x: 320,
-        y: 40,
-        width: 350,
-        height: 280,
-        contentFactory: createViewportContent
-    });
-
-    createWindow({
-        scope: 'Game',
-        state: 'Edit',
-        presentation: 'Properties',
-        x: 700,
-        y: 40,
-        width: 280,
-        height: 320,
-        contentFactory: createPropertiesContent
-    });
-
-    // Independent Context: (Asset, Edit, Text) - separate selection
-    // This demonstrates that different Contexts maintain independent state
-
-    createWindow({
-        scope: 'Asset',
-        state: 'Edit',
-        presentation: 'Text',
-        x: 320,
-        y: 360,
-        width: 350,
-        height: 250,
-        contentFactory: createTextEditorContent
-    });
-
-    // Set initial focus
-    const firstWindow = document.querySelector('.window');
-    if (firstWindow) {
-        firstWindow.classList.add('active');
-    }
+    // Create initial demo panels
+    createPanel({ scope: 'Game', state: 'Edit', presentation: 'Viewport', x: 40, y: 40, width: 350, height: 280 });
+    createPanel({ scope: 'Game', state: 'Edit', presentation: 'List', x: 420, y: 40, width: 220, height: 280 });
+    createPanel({ scope: 'Asset', state: 'Browse', presentation: 'List', x: 40, y: 350, width: 220, height: 220 });
+    createPanel({ scope: 'Asset', state: 'Browse', presentation: 'Properties', x: 290, y: 350, width: 220, height: 220 });
 }
 
-// Start the demo
-document.addEventListener('DOMContentLoaded', initDemo);
+document.addEventListener('DOMContentLoaded', init);
