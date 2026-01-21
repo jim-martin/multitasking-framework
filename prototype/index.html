@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multitasking Framework - View Coordination Prototype</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="desktop">
+        <!-- Windows will be dynamically created here -->
+    </div>
+
+    <!-- Window Template -->
+    <template id="window-template">
+        <div class="window">
+            <div class="window-titlebar">
+                <span class="window-title"></span>
+            </div>
+            <div class="window-content">
+                <!-- Content will be injected here -->
+            </div>
+        </div>
+    </template>
+
+    <!-- Legend -->
+    <div id="legend">
+        <h3>View Coordination Demo</h3>
+        <p><strong>Faceted Views:</strong> Windows with same (Scope, State) share selection</p>
+        <div class="legend-item">
+            <span class="legend-color" style="background: #4a9eff;"></span>
+            <span>(Game, Edit, *) - Linked selection</span>
+        </div>
+        <div class="legend-item">
+            <span class="legend-color" style="background: #ff6b6b;"></span>
+            <span>(Asset, Edit, *) - Independent selection</span>
+        </div>
+        <p class="legend-hint">Click items to select. Drag title bars to move windows.</p>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

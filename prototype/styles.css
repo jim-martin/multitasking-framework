@@ -1,0 +1,339 @@
+/* Reset and base styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Courier New', monospace;
+    background: #1a1a2e;
+    overflow: hidden;
+    height: 100vh;
+    width: 100vw;
+}
+
+/* Desktop Canvas */
+#desktop {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    background:
+        linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+    background-size: 20px 20px;
+}
+
+/* Window Styles */
+.window {
+    position: absolute;
+    min-width: 200px;
+    min-height: 150px;
+    background: #0f0f1a;
+    border: 2px solid #444;
+    border-radius: 4px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+    display: flex;
+    flex-direction: column;
+}
+
+.window.active {
+    border-color: #666;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.7);
+}
+
+/* Context-based border colors */
+.window[data-context="Game-Edit"] {
+    border-color: #4a9eff;
+}
+
+.window[data-context="Game-Edit"].active {
+    border-color: #6bb3ff;
+    box-shadow: 0 8px 30px rgba(74, 158, 255, 0.3);
+}
+
+.window[data-context="Asset-Edit"] {
+    border-color: #ff6b6b;
+}
+
+.window[data-context="Asset-Edit"].active {
+    border-color: #ff8a8a;
+    box-shadow: 0 8px 30px rgba(255, 107, 107, 0.3);
+}
+
+/* Title Bar */
+.window-titlebar {
+    padding: 8px 12px;
+    background: #1a1a2e;
+    border-bottom: 1px solid #333;
+    cursor: grab;
+    user-select: none;
+    border-radius: 2px 2px 0 0;
+}
+
+.window-titlebar:active {
+    cursor: grabbing;
+}
+
+.window-title {
+    font-size: 12px;
+    color: #888;
+    letter-spacing: 0.5px;
+}
+
+.window[data-context="Game-Edit"] .window-title {
+    color: #4a9eff;
+}
+
+.window[data-context="Asset-Edit"] .window-title {
+    color: #ff6b6b;
+}
+
+/* Window Content */
+.window-content {
+    flex: 1;
+    padding: 12px;
+    overflow: auto;
+    color: #ccc;
+}
+
+/* Item List */
+.item-list {
+    list-style: none;
+}
+
+.item-list li {
+    padding: 8px 12px;
+    margin: 4px 0;
+    border: 1px dashed #333;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    font-size: 13px;
+}
+
+.item-list li:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: #555;
+}
+
+.item-list li.selected {
+    background: rgba(74, 158, 255, 0.15);
+    border-color: #4a9eff;
+    border-style: solid;
+    color: #fff;
+}
+
+.window[data-context="Asset-Edit"] .item-list li.selected {
+    background: rgba(255, 107, 107, 0.15);
+    border-color: #ff6b6b;
+}
+
+/* Tree View */
+.tree-view {
+    font-size: 13px;
+}
+
+.tree-item {
+    padding: 6px 8px;
+    margin: 2px 0;
+    cursor: pointer;
+    border: 1px solid transparent;
+    border-radius: 3px;
+    transition: all 0.15s ease;
+}
+
+.tree-item:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.tree-item.selected {
+    background: rgba(74, 158, 255, 0.15);
+    border-color: #4a9eff;
+    color: #fff;
+}
+
+.tree-item .indent {
+    display: inline-block;
+    width: 16px;
+}
+
+.tree-item .icon {
+    margin-right: 6px;
+    opacity: 0.6;
+}
+
+/* 3D Viewport Placeholder */
+.viewport-3d {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.viewport-canvas {
+    flex: 1;
+    border: 1px dashed #333;
+    border-radius: 3px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #555;
+    font-size: 12px;
+    position: relative;
+}
+
+.viewport-object {
+    position: absolute;
+    width: 60px;
+    height: 60px;
+    border: 2px dashed #444;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    color: #666;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.viewport-object:hover {
+    border-color: #666;
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.viewport-object.selected {
+    border-color: #4a9eff;
+    border-style: solid;
+    background: rgba(74, 158, 255, 0.1);
+    color: #4a9eff;
+}
+
+/* Properties Panel */
+.properties-panel {
+    font-size: 12px;
+}
+
+.property-group {
+    margin-bottom: 12px;
+}
+
+.property-group-title {
+    color: #666;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 8px;
+    padding-bottom: 4px;
+    border-bottom: 1px dashed #333;
+}
+
+.property-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 4px 0;
+    border-bottom: 1px dotted #222;
+}
+
+.property-label {
+    color: #888;
+}
+
+.property-value {
+    color: #aaa;
+    font-family: 'Courier New', monospace;
+}
+
+.no-selection {
+    color: #555;
+    font-style: italic;
+    text-align: center;
+    padding: 20px;
+}
+
+/* Text Editor */
+.text-editor {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.editor-toolbar {
+    padding: 8px;
+    border-bottom: 1px dashed #333;
+    display: flex;
+    gap: 8px;
+}
+
+.editor-btn {
+    padding: 4px 8px;
+    background: transparent;
+    border: 1px dashed #444;
+    color: #888;
+    font-family: inherit;
+    font-size: 11px;
+    cursor: pointer;
+    border-radius: 2px;
+}
+
+.editor-btn:hover {
+    border-color: #666;
+    color: #aaa;
+}
+
+.editor-content {
+    flex: 1;
+    padding: 12px;
+    font-size: 12px;
+    line-height: 1.6;
+    color: #999;
+}
+
+/* Legend */
+#legend {
+    position: fixed;
+    bottom: 20px;
+    left: 20px;
+    background: rgba(15, 15, 26, 0.95);
+    border: 1px solid #333;
+    border-radius: 4px;
+    padding: 16px;
+    font-size: 12px;
+    color: #888;
+    max-width: 320px;
+    z-index: 10000;
+}
+
+#legend h3 {
+    color: #ccc;
+    font-size: 14px;
+    margin-bottom: 12px;
+    font-weight: normal;
+}
+
+#legend p {
+    margin: 8px 0;
+    line-height: 1.5;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 6px 0;
+}
+
+.legend-color {
+    width: 16px;
+    height: 16px;
+    border-radius: 2px;
+}
+
+.legend-hint {
+    color: #666;
+    font-style: italic;
+    margin-top: 12px !important;
+    padding-top: 8px;
+    border-top: 1px dashed #333;
+}
