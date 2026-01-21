@@ -8,11 +8,11 @@ Developers are working with a lot of necessary complexity when crafting a game. 
 
 Every view in the system is defined by three independent axes:
 
-|Axis|Question it answers|Examples|
-|---|---|---|
-|**Scope**|What namespace am I looking into?|Game, Asset, Inventory, Creator Store, Package, Avatar|
-|**State**|In what mode does it exist?|Edit, Client (running player), Server (running authority), Preview, Browse|
-|**Presentation**|How is it rendered?|3D viewport, Tree, Graph, Timeline, 2D canvas, Table, Text, Properties, Log|
+| Axis             | Question it answers               | Examples                                                                    |
+| ---------------- | --------------------------------- | --------------------------------------------------------------------------- |
+| **Scope**        | What namespace am I looking into? | Game, Asset, Inventory, Creator Store, Package, Avatar                      |
+| **State**        | In what mode does it exist?       | Edit, Client (running player), Server (running authority), Preview, Browse  |
+| **Presentation** | How is it rendered?               | 3D viewport, Tree, Graph, Timeline, 2D canvas, Table, Text, Properties, Log |
 
 A **View** is a single panel defined by the tuple `(Scope, State, Presentation)`.
 
@@ -46,14 +46,13 @@ A **View** is a single panel defined by the tuple `(Scope, State, Presentation)`
 
 ### States
 
-|Scope|Edit|Client|Server|Preview|Browse|
-|---|:-:|:-:|:-:|:-:|:-:|
-|Game|✓|✓|✓|—|—|
-|Asset|✓|—|—|✓|—|
-|Inventory|—|—|—|✓|✓|
-|Creator Store|—|—|—|✓|✓|
-|Package|✓|—|—|—|—|
-|Avatar|✓|—|—|✓|—|
+| Scope         | Edit | Preview (client) | Server | Browse |
+| ------------- | :--: | :--------------: | :----: | :----: |
+| Inventory     |  —   |        —         |   —    |   ✓    |
+| Creator Store |  —   |        —         |   —    |   ✓    |
+| Game          |  ✓   |        ✓         |   ✓    |   —    |
+| Asset         |  ✓   |        ✓         |   —    |   —    |
+| Package       |  ✓   |        —         |   —    |   —    |
 
 ### Context
 
