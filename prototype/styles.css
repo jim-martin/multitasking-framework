@@ -1,0 +1,737 @@
+/* =============================================================================
+   Reset & Base
+   ============================================================================= */
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
+    background: #111;
+    color: #ccc;
+    overflow: hidden;
+    height: 100vh;
+    width: 100vw;
+}
+
+#app {
+    height: 100vh;
+    width: 100vw;
+    position: relative;
+}
+
+/* =============================================================================
+   Start Page
+   ============================================================================= */
+
+#start-page {
+    position: absolute;
+    inset: 0;
+    z-index: 10;
+    background: #111;
+    overflow-y: auto;
+    padding: 40px;
+    transition: opacity 0.25s, visibility 0.25s;
+}
+
+#start-page.hidden {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+}
+
+.start-header {
+    text-align: center;
+    margin-bottom: 36px;
+}
+
+.start-header h1 {
+    font-size: 22px;
+    font-weight: 600;
+    color: #ddd;
+    margin-bottom: 4px;
+}
+
+.start-header p {
+    font-size: 13px;
+    color: #666;
+}
+
+/* Owner cards */
+
+.owner-card {
+    background: #1a1a1a;
+    border: 1px solid #2a2a2a;
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 24px;
+    max-width: 900px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.owner-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #2a2a2a;
+}
+
+.owner-icon { font-size: 20px; }
+.owner-name { font-size: 16px; font-weight: 600; color: #eee; }
+.owner-type {
+    font-size: 10px;
+    text-transform: uppercase;
+    color: #666;
+    background: #2a2a2a;
+    padding: 2px 8px;
+    border-radius: 4px;
+}
+
+.owner-section {
+    margin-bottom: 16px;
+}
+
+.owner-section:last-child { margin-bottom: 0; }
+
+.owner-section h3 {
+    font-size: 12px;
+    font-weight: 600;
+    color: #888;
+    margin-bottom: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+}
+
+.badge {
+    font-size: 10px;
+    background: #333;
+    color: #777;
+    padding: 1px 6px;
+    border-radius: 8px;
+    font-weight: 400;
+}
+
+/* Start grid tiles */
+
+.start-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 8px;
+}
+
+.start-tile {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 14px 8px;
+    background: #222;
+    border: 1px solid #333;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-align: center;
+}
+
+.start-tile:hover {
+    background: #2a2a2a;
+    border-color: #555;
+    transform: translateY(-1px);
+}
+
+.tile-icon { font-size: 24px; margin-bottom: 6px; }
+.tile-name { font-size: 12px; color: #ccc; margin-bottom: 2px; }
+.tile-sub  { font-size: 10px; color: #666; }
+
+/* =============================================================================
+   Home Button
+   ============================================================================= */
+
+#home-btn {
+    position: fixed;
+    top: 12px;
+    left: 12px;
+    z-index: 9999;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    border: 1px solid #444;
+    background: #222;
+    color: #aaa;
+    font-size: 18px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+}
+
+#home-btn:hover {
+    background: #333;
+    color: #fff;
+}
+
+/* =============================================================================
+   Windows Layer
+   ============================================================================= */
+
+#windows-layer {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+}
+
+/* =============================================================================
+   Window
+   ============================================================================= */
+
+.window {
+    position: absolute;
+    background: #1e1e1e;
+    border: 1px solid #3a3a3a;
+    border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    pointer-events: auto;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+    min-width: 300px;
+    min-height: 200px;
+}
+
+.window.dragging { opacity: 0.85; }
+
+.window-flash {
+    animation: flash 0.3s ease;
+}
+
+@keyframes flash {
+    0%, 100% { box-shadow: 0 8px 32px rgba(0,0,0,0.5); }
+    50% { box-shadow: 0 0 0 3px #5b8def, 0 8px 32px rgba(0,0,0,0.5); }
+}
+
+/* Title bar */
+
+.window-titlebar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px;
+    background: #282828;
+    border-bottom: 1px solid #333;
+    cursor: grab;
+    flex-shrink: 0;
+}
+
+.window-titlebar:active { cursor: grabbing; }
+
+.titlebar-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+}
+
+.titlebar-icon { font-size: 14px; }
+.titlebar-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: #ddd;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.titlebar-kind {
+    font-size: 10px;
+    color: #666;
+    background: #333;
+    padding: 1px 6px;
+    border-radius: 3px;
+    text-transform: uppercase;
+    flex-shrink: 0;
+}
+
+.titlebar-controls {
+    display: flex;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+.win-btn {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    color: transparent;
+    cursor: pointer;
+    background: #555;
+}
+
+.win-close { background: #e05050; }
+.win-btn:hover { color: #fff; }
+
+/* Window body */
+
+.window-body {
+    flex: 1;
+    display: flex;
+    overflow: hidden;
+    min-height: 0;
+}
+
+.layout-2col { }
+.layout-3col { }
+
+.layout-2col > .panel:first-child { flex: 1; }
+.layout-2col > .panel:last-child  { flex: 1; }
+
+.layout-3col > .panel:nth-child(1) { flex: 0 0 200px; }
+.layout-3col > .panel:nth-child(2) { flex: 2; }
+.layout-3col > .panel:nth-child(3) { flex: 0 0 200px; }
+
+/* Resize handle */
+
+.resize-handle {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 16px;
+    height: 16px;
+    cursor: nwse-resize;
+}
+
+.resize-handle::after {
+    content: '';
+    position: absolute;
+    bottom: 3px;
+    right: 3px;
+    width: 8px;
+    height: 8px;
+    border-right: 2px solid #444;
+    border-bottom: 2px solid #444;
+}
+
+/* =============================================================================
+   Panel (within a window)
+   ============================================================================= */
+
+.panel {
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid #2a2a2a;
+    min-width: 0;
+    overflow: hidden;
+}
+
+.panel:last-child { border-right: none; }
+
+.panel-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    background: #232323;
+    border-bottom: 1px solid #2a2a2a;
+    flex-shrink: 0;
+}
+
+.panel-hdr-icon { font-size: 11px; }
+.panel-hdr-title {
+    font-size: 10px;
+    font-weight: 600;
+    color: #777;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.panel-body {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    min-height: 0;
+}
+
+/* =============================================================================
+   Panel List (places list, usages)
+   ============================================================================= */
+
+.panel-list {
+    padding: 4px;
+}
+
+.list-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 8px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 12px;
+    color: #999;
+    transition: background 0.1s;
+}
+
+.list-row:hover { background: #2a2a2a; }
+.list-row.selected { background: #333; color: #ddd; }
+
+.row-icon { font-size: 12px; flex-shrink: 0; }
+.row-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.row-detail { font-size: 10px; color: #666; flex-shrink: 0; }
+.row-class { font-size: 10px; color: #555; flex-shrink: 0; }
+
+.row-open {
+    font-size: 12px;
+    color: #555;
+    cursor: pointer;
+    flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+}
+
+.row-open:hover {
+    background: #444;
+    color: #aaa;
+}
+
+/* =============================================================================
+   Instance Tree
+   ============================================================================= */
+
+.tree-panel { overflow-y: auto; }
+
+.tree-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    color: #999;
+    transition: background 0.1s;
+}
+
+.tree-row:hover { background: #2a2a2a; }
+.tree-row.selected { background: #333; color: #ddd; }
+
+.row-refs {
+    display: flex;
+    gap: 4px;
+    flex-shrink: 0;
+}
+
+.ref-badge {
+    font-size: 9px;
+    padding: 1px 6px;
+    border-radius: 4px;
+    cursor: pointer;
+    background: #2a2a2a;
+    color: #888;
+    border: 1px solid #383838;
+    white-space: nowrap;
+    transition: all 0.1s;
+}
+
+.ref-badge:hover {
+    background: #383838;
+    color: #bbb;
+    border-color: #555;
+}
+
+.ref-mesh    { color: #5befc4; border-color: #2a4a40; }
+.ref-mesh:hover { background: #1a3a30; border-color: #5befc4; }
+.ref-image   { color: #ef5bb8; border-color: #4a2a3a; }
+.ref-image:hover { background: #3a1a2a; border-color: #ef5bb8; }
+.ref-package { color: #b85bef; border-color: #3a2a4a; }
+.ref-package:hover { background: #2a1a3a; border-color: #b85bef; }
+
+/* =============================================================================
+   Viewport
+   ============================================================================= */
+
+.viewport-body { padding: 0; }
+
+.viewport-canvas {
+    width: 100%;
+    height: 100%;
+    min-height: 200px;
+    background: linear-gradient(180deg, #141a2e 0%, #1e2844 50%, #263054 100%);
+    position: relative;
+    overflow: hidden;
+}
+
+.viewport-grid {
+    position: absolute;
+    bottom: 10%;
+    left: 0;
+    right: 0;
+    height: 70%;
+    background:
+        linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px),
+        linear-gradient(0deg, rgba(255,255,255,0.025) 1px, transparent 1px);
+    background-size: 30px 30px;
+    transform: rotateX(60deg);
+    transform-origin: bottom center;
+    pointer-events: none;
+}
+
+.viewport-obj {
+    position: absolute;
+    padding: 6px 10px;
+    background: rgba(40, 50, 80, 0.85);
+    border: 2px solid rgba(255,255,255,0.12);
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    transition: all 0.15s;
+    box-shadow: 0 3px 8px rgba(0,0,0,0.3);
+}
+
+.viewport-obj .obj-icon { font-size: 16px; }
+.viewport-obj .obj-label {
+    font-size: 9px;
+    color: rgba(255,255,255,0.5);
+    white-space: nowrap;
+    max-width: 80px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.viewport-obj:hover {
+    background: rgba(60, 70, 100, 0.95);
+    border-color: rgba(255,255,255,0.3);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 14px rgba(0,0,0,0.4);
+}
+
+.viewport-obj:hover .obj-label { color: rgba(255,255,255,0.9); }
+
+.viewport-obj.selected {
+    background: rgba(91, 141, 239, 0.4);
+    border-color: #5b8def;
+    box-shadow: 0 0 18px rgba(91,141,239,0.4), 0 4px 12px rgba(0,0,0,0.3);
+}
+
+.viewport-obj.selected .obj-label { color: #fff; }
+
+/* =============================================================================
+   Properties
+   ============================================================================= */
+
+.props {
+    padding: 10px;
+}
+
+.prop-group {
+    margin-bottom: 14px;
+}
+
+.prop-group:last-child { margin-bottom: 0; }
+
+.prop-group-title {
+    font-size: 9px;
+    font-weight: 600;
+    color: #555;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    margin-bottom: 6px;
+    padding-bottom: 4px;
+    border-bottom: 1px solid #2a2a2a;
+}
+
+.prop-row {
+    display: flex;
+    align-items: center;
+    padding: 3px 0;
+    font-size: 11px;
+}
+
+.prop-label {
+    width: 70px;
+    color: #555;
+    flex-shrink: 0;
+    font-size: 10px;
+}
+
+.prop-value {
+    flex: 1;
+    color: #aaa;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 10px;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.ref-link {
+    cursor: pointer;
+    color: #7aa8ef;
+    transition: color 0.1s;
+}
+
+.ref-link:hover { color: #a0c4ff; }
+
+.empty-hint {
+    color: #444;
+    font-size: 11px;
+    text-align: center;
+    padding: 20px 10px;
+}
+
+.selected-detail { margin-top: 8px; }
+
+/* Open button in properties */
+
+.open-btn {
+    display: block;
+    width: 100%;
+    margin-top: 8px;
+    padding: 6px 10px;
+    background: #333;
+    border: 1px solid #444;
+    border-radius: 5px;
+    color: #aaa;
+    font-size: 11px;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.15s;
+}
+
+.open-btn:hover {
+    background: #444;
+    color: #ddd;
+    border-color: #666;
+}
+
+/* =============================================================================
+   Asset Preview
+   ============================================================================= */
+
+.asset-preview {
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.preview-icon-large {
+    font-size: 48px;
+    margin-bottom: 8px;
+}
+
+.preview-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: #ddd;
+    margin-bottom: 2px;
+}
+
+.preview-type {
+    font-size: 11px;
+    color: #666;
+    text-transform: uppercase;
+}
+
+/* Image placeholder */
+
+.image-placeholder {
+    width: 100%;
+    height: 120px;
+    border-radius: 6px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    margin-bottom: 4px;
+}
+
+.image-placeholder span { font-size: 32px; }
+.placeholder-label { font-size: 10px; color: rgba(255,255,255,0.4); }
+
+/* Audio player mock */
+
+.audio-player-mock {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    padding: 16px 0;
+}
+
+.audio-icon { font-size: 32px; }
+
+.audio-waveform {
+    display: flex;
+    align-items: flex-end;
+    gap: 2px;
+    height: 50px;
+    padding: 0 8px;
+}
+
+.wave-bar {
+    width: 4px;
+    background: #5b8def;
+    border-radius: 2px;
+    opacity: 0.5;
+}
+
+.audio-controls {
+    display: flex;
+    gap: 16px;
+}
+
+.audio-btn {
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #333;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 11px;
+    color: #aaa;
+    transition: all 0.15s;
+}
+
+.audio-btn:hover { background: #444; color: #fff; }
+
+.play-btn {
+    width: 34px;
+    height: 34px;
+    font-size: 14px;
+    background: #5b8def;
+    color: #fff;
+}
+
+.play-btn:hover { background: #6d9bff; }
+
+.audio-time {
+    font-size: 10px;
+    color: #555;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+}
+
+/* =============================================================================
+   Scrollbar
+   ============================================================================= */
+
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #444; }
