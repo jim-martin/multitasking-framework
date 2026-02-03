@@ -1,0 +1,111 @@
+{
+  "owners": [
+    {
+      "id": "jimjam",
+      "type": "account",
+      "games": [
+        {
+          "id": "obby",
+          "name": "Obby",
+          "places": [
+            {
+              "id": "p1",
+              "name": "Lobby",
+              "instances": [
+                { "id": "i1", "class": "Part", "name": "Floor", "size": [100, 1, 100], "color": [0.5, 0.5, 0.5] },
+                { "id": "i2", "class": "Part", "name": "SpawnPlatform", "size": [10, 1, 10], "color": [0.2, 0.8, 0.2] },
+                { "id": "i3", "class": "MeshPart", "name": "Tree1", "meshId": "mesh1", "position": [20, 0, 15] },
+                { "id": "i4", "class": "MeshPart", "name": "Tree2", "meshId": "mesh1", "position": [-15, 0, 20] },
+                { "id": "i5", "class": "MeshPart", "name": "Rock1", "meshId": "mesh2", "textureId": "img3" },
+                { "id": "i6", "class": "Decal", "name": "WelcomeSign", "imageId": "img1" },
+                { "id": "i7", "class": "PackageLink", "name": "UIKit", "packageId": "pkg1" },
+                { "id": "i8", "class": "Script", "name": "LobbyManager" },
+                { "id": "i9", "class": "LocalScript", "name": "PlayerSpawn" }
+              ]
+            },
+            {
+              "id": "p2",
+              "name": "Level 1",
+              "instances": [
+                { "id": "i10", "class": "Part", "name": "StartPlatform", "size": [10, 1, 10] },
+                { "id": "i11", "class": "Part", "name": "JumpPlatform1", "size": [5, 1, 5] },
+                { "id": "i12", "class": "Part", "name": "JumpPlatform2", "size": [4, 1, 4] },
+                { "id": "i13", "class": "Part", "name": "JumpPlatform3", "size": [3, 1, 3] },
+                { "id": "i14", "class": "MeshPart", "name": "Checkpoint", "meshId": "mesh3" },
+                { "id": "i15", "class": "PackageLink", "name": "CharacterRig", "packageId": "pkg3" },
+                { "id": "i16", "class": "Script", "name": "CheckpointHandler" }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "fpsgame",
+          "name": "FPS Game",
+          "places": [
+            {
+              "id": "p3",
+              "name": "Main",
+              "instances": [
+                { "id": "i20", "class": "Model", "name": "Map" },
+                { "id": "i21", "class": "MeshPart", "name": "Crate1", "meshId": "mesh4" },
+                { "id": "i22", "class": "MeshPart", "name": "Crate2", "meshId": "mesh4" },
+                { "id": "i23", "class": "MeshPart", "name": "Barrel", "meshId": "mesh5", "textureId": "img4" },
+                { "id": "i24", "class": "PackageLink", "name": "WeaponSystem", "packageId": "pkg4" },
+                { "id": "i25", "class": "PackageLink", "name": "UIKit", "packageId": "pkg1" },
+                { "id": "i26", "class": "ImageLabel", "name": "Crosshair", "imageId": "img2" },
+                { "id": "i27", "class": "Script", "name": "GameManager" },
+                { "id": "i28", "class": "Script", "name": "SpawnManager" }
+              ]
+            }
+          ]
+        }
+      ],
+      "inventory": [
+        { "id": "pkg1", "type": "package", "name": "UI Kit" },
+        { "id": "pkg2", "type": "package", "name": "Sound Effects" },
+        { "id": "pkg3", "type": "package", "name": "Character Rig" },
+        { "id": "pkg4", "type": "package", "name": "Weapon System" },
+        { "id": "mesh1", "type": "mesh", "name": "Tree" },
+        { "id": "mesh2", "type": "mesh", "name": "Rock" },
+        { "id": "mesh3", "type": "mesh", "name": "Checkpoint Flag" },
+        { "id": "mesh4", "type": "mesh", "name": "Crate" },
+        { "id": "mesh5", "type": "mesh", "name": "Barrel" },
+        { "id": "img1", "type": "image", "name": "Logo" },
+        { "id": "img2", "type": "image", "name": "Crosshair" },
+        { "id": "img3", "type": "image", "name": "Rock Texture" },
+        { "id": "img4", "type": "image", "name": "Barrel Texture" },
+        { "id": "audio1", "type": "audio", "name": "Footsteps" },
+        { "id": "audio2", "type": "audio", "name": "Jump Sound" }
+      ]
+    },
+    {
+      "id": "cool-group",
+      "type": "group",
+      "games": [
+        {
+          "id": "group-game",
+          "name": "Group Project",
+          "places": [
+            {
+              "id": "gp1",
+              "name": "Hub",
+              "instances": [
+                { "id": "gi1", "class": "Part", "name": "MainFloor", "size": [200, 1, 200] },
+                { "id": "gi2", "class": "MeshPart", "name": "Statue", "meshId": "gmesh1" },
+                { "id": "gi3", "class": "PackageLink", "name": "SharedUI", "packageId": "gpkg2" },
+                { "id": "gi4", "class": "Decal", "name": "GroupLogo", "imageId": "gimg1" }
+              ]
+            }
+          ]
+        }
+      ],
+      "inventory": [
+        { "id": "gpkg1", "type": "package", "name": "Shared Assets" },
+        { "id": "gpkg2", "type": "package", "name": "Common UI" },
+        { "id": "gpkg3", "type": "package", "name": "Sound Library" },
+        { "id": "gmesh1", "type": "mesh", "name": "Group Statue" },
+        { "id": "gimg1", "type": "image", "name": "Group Logo" }
+      ]
+    }
+  ]
+}
